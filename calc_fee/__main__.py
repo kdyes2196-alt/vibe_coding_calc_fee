@@ -113,6 +113,18 @@ def main(argv: list[str] | None = None) -> int:
             dummy[fill["total_cell"]] = Formula(f"SUM({col}{first}:{col}{last})")
         wb.set_cells(fill["sheet"], dummy)
         print(f"[임시] '{fill['sheet']}' {col}{first}:{col}{last} 난수 {last - first + 1}개 입력 (테스트용)")
+    for fv in cfg.get("fixed_values", []):
+        wb.set_cells(fv["sheet"], {fv["cell"]: fv["value"]})
+        print(f"[고정값] '{fv['sheet']}' {fv['cell']} = {fv['value']:,}")
+    for ff in cfg.get("formula_fill", []):
+        col, first, last = ff["column"], ff["first_row"], ff["last_row"]
+        cells: dict[str, int | Formula] = {
+            f"{col}{r}": Formula(ff["formula"].format(r=r)) for r in range(first, last + 1)
+        }
+        if ff.get("total_cell"):
+            cells[ff["total_cell"]] = Formula(f"SUM({col}{first}:{col}{last})")
+        wb.set_cells(ff["sheet"], cells)
+        print(f"[수식] '{ff['sheet']}' {col}{first}:{col}{last} = {ff['formula']}")
     wb.request_full_recalc()
     wb.save(args.out)
     wb.close()
