@@ -1,0 +1,39 @@
+# 기관 담당자 앞 메일 발송 설정
+#
+# 비밀번호는 이 파일에 적지 마세요. 실행 전에 환경변수로 넣습니다.
+#   Windows PowerShell :  $env:CALC_FEE_SMTP_PASSWORD = "비밀번호"
+#   macOS / Linux      :  export CALC_FEE_SMTP_PASSWORD="비밀번호"
+
+[smtp]
+host = "smtp.example.com"         # 회사 메일 서버 주소로 바꾸세요
+port = 587
+security = "starttls"             # starttls | ssl | none
+username = "fee-admin@example.com"   # 로그인이 필요 없으면 "" 로 두세요
+password_env = "CALC_FEE_SMTP_PASSWORD"
+timeout = 30
+
+[sender]
+name = "자동이체통합관리 담당"
+address = "fee-admin@example.com"
+
+[message]
+# {기간} {기관코드} {기관명} {담당자} {실적회비} {균등회비} {회비합계} {실적비율} {실적합계} {회비총액}
+subject = "[자동이체통합관리] {기간} 회비 산출내역 안내 ({기관명})"
+always_cc = []                    # 모든 메일에 넣을 참조 주소 (예: ["team@example.com"])
+reply_to = ""
+body = """{담당자}님, 안녕하십니까.
+
+{기간} 자동이체통합관리 회비 산출내역을 아래와 같이 안내드립니다.
+
+  ■ 기관 : {기관명} ({기관코드})
+  ■ 실적회비 : {실적회비}원
+  ■ 균등회비 : {균등회비}원
+  ■ 회비 합계 : {회비합계}원
+  ■ 실적 비율 : {실적비율} (실적 {실적합계}건)
+
+자세한 산출 내역은 첨부 파일을 확인해 주시기 바랍니다.
+문의 사항은 이 메일로 회신해 주십시오.
+
+감사합니다.
+자동이체통합관리 담당 드림
+"""
