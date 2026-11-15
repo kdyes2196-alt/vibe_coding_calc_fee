@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import random
 import sys
 import tomllib
 from pathlib import Path
@@ -102,6 +103,16 @@ def main(argv: list[str] | None = None) -> int:
         values[f"{col}{t}"] = Formula(f"SUM({col}{tgt['first_row']}:{col}{tgt['last_row']})")
 
     wb.set_cells(tgt["sheet"], values)
+    for fill in cfg.get("dummy_fill", []):
+        rng = random.Random(fill.get("seed"))
+        col, first, last = fill["column"], fill["first_row"], fill["last_row"]
+        dummy: dict[str, int | Formula] = {
+            f"{col}{r}": rng.randint(fill["min"], fill["max"]) for r in range(first, last + 1)
+        }
+        if fill.get("total_cell"):
+            dummy[fill["total_cell"]] = Formula(f"SUM({col}{first}:{col}{last})")
+        wb.set_cells(fill["sheet"], dummy)
+        print(f"[임시] '{fill['sheet']}' {col}{first}:{col}{last} 난수 {last - first + 1}개 입력 (테스트용)")
     wb.request_full_recalc()
     wb.save(args.out)
     wb.close()
