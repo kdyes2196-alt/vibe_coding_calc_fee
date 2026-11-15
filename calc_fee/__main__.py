@@ -43,6 +43,27 @@ def build_pivots(raw_path: str, cfg: dict) -> tuple[list[tuple[str, pd.DataFrame
     return pivots, grouped, items_all
 
 
+def ratio_adjust_formulas(ra: dict) -> dict[str, Formula]:
+    """비율 = ROUND(값/합계, d) + 단수 조정분.
+
+    N = 1 - SUM(반올림 비율) 을 최소 단위(10^-d) 개수로 바꾼 값.
+    N > 0 이면 분담률 상위 N개 기관에 +1단위, N < 0 이면 상위 |N|개 기관에서 -1단위.
+    순위가 같은 기관은 위쪽 행이 먼저 (COUNTIF 로 동순위 구분).
+    """
+    col, vcol, d, tot = ra["column"], ra["value_column"], ra["decimals"], ra["total_cell"]
+    first, last = ra["first_row"], ra["last_row"]
+    rng = f"${vcol}${first}:${vcol}${last}"
+    unit = f"10^-{d}"
+    n = f"ROUND((1-SUMPRODUCT(ROUND({rng}/{tot},{d})))*10^{d},0)"
+    out = {}
+    for r in range(first, last + 1):
+        rank = f"(RANK({vcol}{r},{rng})+COUNTIF(${vcol}${first - 1}:{vcol}{r - 1},{vcol}{r}))"
+        out[f"{col}{r}"] = Formula(
+            f"ROUND({vcol}{r}/{tot},{d})+SIGN({n})*({rank}<=ABS({n}))*{unit}"
+        )
+    return out
+
+
 def compare_items(grouped: pd.DataFrame, items: dict) -> list[str]:
     """compare_with 가 지정된 항목이 비교 대상과 기관별로 같은지 확인한다."""
     notes = []
@@ -125,6 +146,10 @@ def main(argv: list[str] | None = None) -> int:
             cells[ff["total_cell"]] = Formula(f"SUM({col}{first}:{col}{last})")
         wb.set_cells(ff["sheet"], cells)
         print(f"[수식] '{ff['sheet']}' {col}{first}:{col}{last} = {ff['formula']}")
+    for ra in cfg.get("ratio_adjust", []):
+        wb.set_cells(ra["sheet"], ratio_adjust_formulas(ra))
+        print(f"[단수조정] '{ra['sheet']}' {ra['column']}{ra['first_row']}:{ra['column']}{ra['last_row']} "
+              f"비율 합계 1 맞춤 (분담률 큰 기관부터 {10 ** -ra['decimals']:.0e}씩)")
     wb.request_full_recalc()
     wb.save(args.out)
     wb.close()
