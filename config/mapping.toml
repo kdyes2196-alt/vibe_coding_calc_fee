@@ -1,0 +1,93 @@
+# 회비 산출 자동화 - 로우데이터 → 계산파일 매핑 설정
+#
+# 이 파일만 고치면 어떤 파일/전문이 어느 항목(열)에 들어갈지 바꿀 수 있습니다.
+# 로우데이터 시트의 모든 파일/전문 열은 아래 [items] 중 정확히 한 곳에 들어가거나
+# [source].ignore_columns 에 적혀 있어야 합니다. 빠지거나 두 번 들어간 열이 있으면
+# 프로그램이 실행을 멈추고 알려줍니다 (값이 조용히 누락되지 않도록).
+
+[source]
+sheet = "2. 파일 및 전문처리건수"   # 로우데이터 시트 이름
+key_column = "금융회사"              # 피벗 행 영역
+ignore_columns = ["날짜"]            # 피벗 값에서 제외할 열
+
+[target]
+sheet = "1. 실적"                    # 계산파일에서 값을 넣을 시트
+code_column = "A"                    # 기관코드가 적힌 열
+first_row = 4                        # 첫 기관 행
+last_row = 67                        # 마지막 기관 행
+total_row = 68                       # 합계 행
+
+# 기관코드 합산 규칙 (계산파일 메모 기준): 왼쪽 코드의 실적을 오른쪽 코드에 더함
+[code_merge]
+"005" = "081"   # 외환 → 하나은행(081)
+"230" = "238"   # 미래에셋대우증권(230) → 238
+
+# ---------------------------------------------------------------------------
+# 항목 정의: column = 계산파일 열, sources = 합산할 로우데이터 열
+# confirmed = true  : 사용자가 알려준 규칙
+# confirmed = false : 임시 규칙 (열 이름 패턴으로 추정) → 확인 후 수정 필요
+# ---------------------------------------------------------------------------
+
+[items."지로 신규등록"]
+column = "C"
+sources = ["AT2111", "AT2114"]
+confirmed = true
+
+[items."지로 해지"]
+column = "D"
+sources = ["AT3111", "212000", "AT3611"]
+confirmed = false   # AT3111, 212000 은 확정 / AT3611 은 추정
+
+[items."지로 변경"]
+column = "E"
+sources = ["310001", "AT3011", "300001"]
+confirmed = true
+
+[items."CMS 신규등록"]
+column = "G"
+sources = ["AT2112"]
+confirmed = false
+
+[items."CMS 해지"]
+column = "H"
+sources = ["AT3112", "AT3612", "Payinfo접수분"]
+confirmed = false
+
+[items."CMS 변경"]
+column = "I"
+sources = ["310002", "AT3012", "AT3005(은행접수)"]
+confirmed = false
+
+[items."펌뱅킹 신규등록"]
+column = "K"
+sources = ["AT2113", "AT2115", "AT2116"]
+confirmed = false
+
+[items."펌뱅킹 해지"]
+column = "L"
+sources = ["AT3113", "AT3115", "AT3116"]
+confirmed = false
+
+[items."펌뱅킹 변경"]
+column = "M"
+sources = ["310003", "310005", "310006", "AT3013"]
+confirmed = false
+
+[items."펌해지내역중계"]
+column = "N"
+sources = ["AT1113(펌해지내역중계)"]
+confirmed = false
+
+# ---------------------------------------------------------------------------
+# 합계 수식: {r} 은 행 번호로 바뀝니다. 계산파일을 열면 자동으로 다시 계산됩니다.
+# (O, P 열 펌신규해지등록중계는 다른 로우데이터 시트에서 채울 예정)
+# ---------------------------------------------------------------------------
+[row_formulas]
+F = "SUM(C{r}:E{r})"          # 지로 합계
+J = "SUM(G{r}:I{r})"          # CMS 합계
+Q = "SUM(K{r}:P{r})"          # 펌뱅킹 합계
+R = "F{r}+J{r}+Q{r}"          # 계좌자동납부 실적합계
+
+[totals]
+# 합계 행(target.total_row)에서 세로 합계(SUM)를 넣을 열
+columns = ["C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R"]
