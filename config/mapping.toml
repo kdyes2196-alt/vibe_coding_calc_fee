@@ -49,8 +49,10 @@ ignore_columns = ["날짜"]
 
 # ---------------------------------------------------------------------------
 # 항목 정의: column = 계산파일 열, sources = 합산할 로우데이터 열
-# confirmed = true  : 사용자가 알려준 규칙
-# confirmed = false : 임시 규칙 (열 이름 패턴으로 추정) → 확인 후 수정 필요
+# 규칙: 앞자리 = 업무 (AT21xx 신규 / AT31xx·AT36xx 해지 / 3100xx·AT30xx 변경)
+#       끝자리 = 서비스 (1 지로 / 2 CMS / 3·5·6 펌뱅킹)
+#       예외: Payinfo접수분 → CMS 해지, AT1113 → 펌해지내역중계(N열)
+# confirmed = true  : 확인된 규칙 / false : 임시 규칙 (실행 시 [주의]로 표시)
 # ---------------------------------------------------------------------------
 
 [sources.items."지로 신규등록"]
@@ -61,7 +63,7 @@ confirmed = true
 [sources.items."지로 해지"]
 column = "D"
 sources = ["AT3111", "212000", "AT3611"]
-confirmed = false   # AT3111, 212000 은 확정 / AT3611 은 추정
+confirmed = true
 
 [sources.items."지로 변경"]
 column = "E"
@@ -71,37 +73,37 @@ confirmed = true
 [sources.items."CMS 신규등록"]
 column = "G"
 sources = ["AT2112"]
-confirmed = false
+confirmed = true
 
 [sources.items."CMS 해지"]
 column = "H"
 sources = ["AT3112", "AT3612", "Payinfo접수분"]
-confirmed = false
+confirmed = true
 
 [sources.items."CMS 변경"]
 column = "I"
-sources = ["310002", "AT3012", "AT3005(은행접수)"]
-confirmed = false
+sources = ["310002", "AT3012"]
+confirmed = true
 
 [sources.items."펌뱅킹 신규등록"]
 column = "K"
 sources = ["AT2113", "AT2115", "AT2116"]
-confirmed = false
+confirmed = true
 
 [sources.items."펌뱅킹 해지"]
 column = "L"
 sources = ["AT3113", "AT3115", "AT3116"]
-confirmed = false
+confirmed = true
 
 [sources.items."펌뱅킹 변경"]
 column = "M"
-sources = ["310003", "310005", "310006", "AT3013"]
-confirmed = false
+sources = ["310003", "310005", "310006", "AT3013", "AT3005(은행접수)"]
+confirmed = true
 
 [sources.items."펌해지내역중계"]
 column = "N"
 sources = ["AT1113(펌해지내역중계)"]
-confirmed = false
+confirmed = true
 
 [[sources]]
 sheet = "3. 펌중계 배치"
